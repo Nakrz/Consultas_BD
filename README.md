@@ -1555,32 +1555,281 @@ GROUP BY d.nombre;
 
 ## Subconsultas
 
-Con operadores básicos de comparación
+### Con operadores básicos de comparación
 
 
 
 1. Devuelve un listado con todos los empleados que tiene el departamento
-de Sistemas. (Sin utilizar INNER JOIN).
+  de Sistemas. (Sin utilizar INNER JOIN).
+
+  ```sql
+  SELECT id, nif, nombre, apellido1, apellido2, id_departamento
+  
+  FROM empleado
+  
+  WHERE id_departamento = (SELECT id
+      FROM departamento
+      WHERE nombre = 'Sistemas');
+      
+  +----+-----------+--------+-----------+-----------+-----------------+
+  | id | nif       | nombre | apellido1 | apellido2 | id_departamento |
+  +----+-----------+--------+-----------+-----------+-----------------+
+  |  2 | Y5575632D | Adela  | Salas     | Díaz      |               2 |
+  |  7 | 80576669X | Pilar  | Ruiz      | NULL      |               2 |
+  |  9 | 56399183D | Juan   | Gómez     | López     |               2 |
+  +----+-----------+--------+-----------+-----------+-----------------+
+  ```
+
 2. Devuelve el nombre del departamento con mayor presupuesto y la cantidad
-que tiene asignada.
+  que tiene asignada.
+
+  ```sql
+  SELECT nombre, presupuesto
+  
+  FROM departamento
+  
+  ORDER BY presupuesto DESC
+  
+  LIMIT 1;
+  
+  +--------+-------------+
+  | nombre | presupuesto |
+  +--------+-------------+
+  | I+D    |      375000 |
+  +--------+-------------+
+  ```
+
 3. Devuelve el nombre del departamento con menor presupuesto y la cantidad
-que tiene asignada.
-Subconsultas con ALL y ANY
+  que tiene asignada. 
+
+  ### Subconsultas con ALL y ANY
+
+  ```
+  SELECT nombre, presupuesto
+  
+  FROM departamento
+  
+  WHERE presupuesto <= ALL (SELECT presupuesto FROM departamento WHERE presupuesto > 0);
+  ```
+
+  ```
+  SELECT nombre, presupuesto
+  
+  FROM departamento
+  
+  WHERE presupuesto = ANY (SELECT MIN(presupuesto) FROM departamento WHERE presupuesto > 0);
+  ```
+
+  
+
 4. Devuelve el nombre del departamento con mayor presupuesto y la cantidad
-que tiene asignada. Sin hacer uso de MAX, ORDER BY ni LIMIT.
+  que tiene asignada. Sin hacer uso de MAX, ORDER BY ni LIMIT.
+
+  ```sql
+  SELECT nombre, presupuesto
+  
+  FROM departamento
+  
+  WHERE presupuesto >= ALL (SELECT presupuesto FROM departamento WHERE presupuesto > 0);
+  
+  +--------+-------------+
+  | nombre | presupuesto |
+  +--------+-------------+
+  | I+D    |      375000 |
+  +--------+-------------+
+  ```
+
+  
+
 5. Devuelve el nombre del departamento con menor presupuesto y la cantidad
-que tiene asignada. Sin hacer uso de MIN, ORDER BY ni LIMIT.
+  que tiene asignada. Sin hacer uso de MIN, ORDER BY ni LIMIT.
+
+  ```sql
+  SELECT nombre, presupuesto
+  
+  FROM departamento
+  
+  WHERE presupuesto <= ANY (SELECT presupuesto FROM departamento WHERE presupuesto > 0);
+  
+  +------------------+-------------+
+  | nombre           | presupuesto |
+  +------------------+-------------+
+  | Desarrollo       |      120000 |
+  | Sistemas         |      150000 |
+  | Recursos Humanos |      280000 |
+  | Contabilidad     |      110000 |
+  | I+D              |      375000 |
+  | Proyectos        |           0 |
+  | Publicidad       |           0 |
+  +------------------+-------------+
+  ```
+
 6. Devuelve los nombres de los departamentos que tienen empleados
-asociados. (Utilizando ALL o ANY).
+  asociados. (Utilizando ALL o ANY).
+
+  ```sql
+  SELECT nombre
+  
+  FROM departamento AS d
+  
+  WHERE id = ANY (
+      
+      SELECT id_departamento
+      
+      FROM empleado
+  );
+  
+  +------------------+
+  | nombre           |
+  +------------------+
+  | Desarrollo       |
+  | Sistemas         |
+  | Recursos Humanos |
+  | Contabilidad     |
+  | I+D              |
+  +------------------+
+  ```
+
 7. Devuelve los nombres de los departamentos que no tienen empleados
-asociados. (Utilizando ALL o ANY).
-Subconsultas con IN y NOT IN
+  asociados. (Utilizando ALL o ANY). 
+
+  ### Subconsultas con IN y NOT IN
+
+  ```sql
+  SELECT nombre
+  
+  FROM departamento
+  
+  WHERE id = ANY (
+      
+      SELECT id_departamento
+      
+      FROM empleado
+      
+      WHERE id_departamento IS NOT NULL
+  );
+  
+  +------------------+
+  | nombre           |
+  +------------------+
+  | Desarrollo       |
+  | Sistemas         |
+  | Recursos Humanos |
+  | Contabilidad     |
+  | I+D              |
+  +------------------+
+  ```
+
 8. Devuelve los nombres de los departamentos que tienen empleados
-asociados. (Utilizando IN o NOT IN).
+  asociados. (Utilizando IN o NOT IN).
+
+  ```sql
+  SELECT nombre
+  
+  FROM departamento
+  
+  WHERE id IN (
+      
+      SELECT id_departamento
+      
+      FROM empleado
+      
+      WHERE id_departamento IS NOT NULL
+  );
+  
+  +------------------+
+  | nombre           |
+  +------------------+
+  | Desarrollo       |
+  | Sistemas         |
+  | Recursos Humanos |
+  | Contabilidad     |
+  | I+D              |
+  +------------------+
+  ```
+
 9. Devuelve los nombres de los departamentos que no tienen empleados
-asociados. (Utilizando IN o NOT IN).
-Subconsultas con EXISTS y NOT EXISTS
+  asociados. (Utilizando IN o NOT IN).
+
+  ```sql
+  SELECT nombre
+  
+  FROM departamento
+  
+  WHERE id NOT IN (
+  
+      SELECT id_departamento
+      
+      FROM empleado
+      
+      WHERE id_departamento IS NOT NULL
+  );
+  
+  +------------+
+  | nombre     |
+  +------------+
+  | Proyectos  |
+  | Publicidad |
+  +------------+
+  ```
+
+  
+
+  ### Subconsultas con EXISTS y NOT EXISTS
+
 10. Devuelve los nombres de los departamentos que tienen empleados
-asociados. (Utilizando EXISTS o NOT EXISTS).
+    asociados. (Utilizando EXISTS o NOT EXISTS).
+
+    ```sql
+    SELECT nombre
+    
+    FROM departamento AS d
+    
+    WHERE EXISTS (
+        
+        SELECT 1
+        
+        FROM empleado e
+        
+        WHERE e.id_departamento = d.id
+    );
+    
+    +------------------+
+    | nombre           |
+    +------------------+
+    | Desarrollo       |
+    | Sistemas         |
+    | Recursos Humanos |
+    | Contabilidad     |
+    | I+D              |
+    +------------------+
+    ```
+
 11. Devuelve los nombres de los departamentos que tienen empleados
-asociados. (Utilizando EXISTS o NOT EXISTS).
+    asociados. (Utilizando EXISTS o NOT EXISTS).
+
+    ```sql
+    SELECT nombreD
+    
+    FROM departamento AS d
+    
+    WHERE EXISTS (
+    
+        SELECT 1
+        
+        FROM empleado AS e
+        
+        WHERE e.id_departamento = d.id );
+        
+    +------------------+
+    | nombreD          |
+    +------------------+
+    | Desarrollo       |
+    | Sistemas         |
+    | Recursos Humanos |
+    | Contabilidad     |
+    | I+D              |
+    +------------------+
+    ```
+    
+
